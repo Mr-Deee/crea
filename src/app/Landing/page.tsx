@@ -40,7 +40,9 @@ style={{ backgroundImage: `url(${images[index]})` }}
 <div className={styles.left}>
 <h1>Delicious, Creamy & Fresh Cheesecakes</h1>
 <p>Hand-crafted cheesecakes baked with love and the finest ingredients.</p>
-<button className={styles.orderBtn}>Order Now</button>
+<button className={styles.orderBtn}>SHARE A PICTURE</button>
+<button className={styles.orderBtn}>UPLOAD A PICTURE</button>
+
 </div>
 </div>
 </section>
