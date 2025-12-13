@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import type { ChangeEvent } from "react";
+import { useState, useEffect, useRef, ChangeEvent } from "react";
 import { ref as dbRef, push } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, database } from "../firebase";
@@ -14,9 +13,9 @@ export default function LandingPage() {
     "/images/cheese3.jpg",
   ];
 
-  const [index, setIndex] = useState<number>(0);
-  const [recording, setRecording] = useState(false);
+  const [index, setIndex] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recording, setRecording] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -29,11 +28,15 @@ export default function LandingPage() {
   }, [images.length]);
 
   // Upload experience to Firebase
-  const uploadExperience = async (file: File, type: "image" | "video", name?: string, caption?: string) => {
+  const uploadExperience = async (
+    file: File,
+    type: "image" | "video",
+    name?: string,
+    caption?: string
+  ) => {
     try {
       const path = `experiences/${Date.now()}_${file.name}`;
       const sRef = storageRef(storage, path);
-
       await uploadBytes(sRef, file);
       const url = await getDownloadURL(sRef);
 
@@ -47,54 +50,76 @@ export default function LandingPage() {
 
       alert("Experience uploaded successfully 🎉");
     } catch (err) {
-      console.error(err);
+      console.error("Upload failed:", err);
       alert("Upload failed ❌");
     }
   };
 
   // Start camera preview
   const handleStartCamera = async () => {
-    if (recording) return;
+    if (stream) return;
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const s = await navigator.mediaDevices.getUserMedia({
+        video: { width: 1280, height: 720 }, // better resolution
+        audio: true,
+      });
       setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
+        await videoRef.current.play().catch(() => {});
       }
     } catch (err) {
-      console.error(err);
-      alert("Camera access denied or unavailable");
+      console.error("Camera access error:", err);
+      alert("Camera access denied or unavailable. Make sure you are on HTTPS or localhost.");
     }
   };
 
-  // Start recording
+  // Take photo
+  const handleTakePhoto = async () => {
+    if (!stream || !videoRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const file = new File([blob], `photo_${Date.now()}.png`, { type: "image/png" });
+      const name = prompt("Enter your name:");
+      const caption = prompt("Enter a caption for your photo:");
+      await uploadExperience(file, "image", name || undefined, caption || undefined);
+    });
+  };
+
+  // Start recording video (40s max)
   const handleStartRecording = () => {
     if (!stream) return;
     const mediaRecorder = new MediaRecorder(stream);
     chunksRef.current = [];
 
-    mediaRecorder.ondataavailable = (e: BlobEvent) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
+    mediaRecorder.ondataavailable = (e: BlobEvent) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "video/mp4" });
       const file = new File([blob], `video_${Date.now()}.mp4`, { type: "video/mp4" });
-
       const name = prompt("Enter your name:");
       const caption = prompt("Enter a caption for your video:");
-
-      uploadExperience(file, "video", name || undefined, caption || undefined);
-
-      // Stop camera tracks
-      stream.getTracks().forEach((t) => t.stop());
+      await uploadExperience(file, "video", name || undefined, caption || undefined);
       setRecording(false);
-      setStream(null);
     };
 
     mediaRecorder.start();
-    setRecording(true);
     mediaRecorderRef.current = mediaRecorder;
+    setRecording(true);
 
-    // Stop after 40 seconds
+    // Auto-stop after 40 seconds
     setTimeout(() => {
       if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
     }, 40000);
@@ -121,7 +146,9 @@ export default function LandingPage() {
     <main className={styles.main}>
       {/* Navbar */}
       <nav className={styles.navbar}>
-        <div className={styles.logo}><img src="/images/logo.png" alt="CheeseCakes Logo" /></div>
+        <div className={styles.logo}>
+          <img src="/images/logo.png" alt="CheeseCakes Logo" />
+        </div>
         <ul className={styles.navlinks}>
           <li>Home</li>
           <li>Menu</li>
@@ -130,13 +157,17 @@ export default function LandingPage() {
         </ul>
       </nav>
 
-      {/* Hero Section */}
+      {/* Hero section */}
       <section className={styles.hero}>
         {images.map((src, i) => (
-          <div key={i} className={styles.heroImage} style={{
-            backgroundImage: `url(${src})`,
-            opacity: i === index ? 1 : 0,
-          }} />
+          <div
+            key={i}
+            className={styles.heroImage}
+            style={{
+              backgroundImage: `url(${src})`,
+              opacity: i === index ? 1 : 0,
+            }}
+          />
         ))}
 
         <div className={styles.overlay}>
@@ -144,24 +175,54 @@ export default function LandingPage() {
             <h1>Cheezy Memories 🧀</h1>
             <p>Capture and share your cheesecake experience</p>
 
-            {!stream && <button className={styles.orderBtn} onClick={handleStartCamera}>OPEN CAMERA</button>}
+            {!stream && (
+              <button className={styles.orderBtn} onClick={handleStartCamera}>
+                OPEN CAMERA
+              </button>
+            )}
 
             {stream && (
               <>
-                <video ref={videoRef} autoPlay muted style={{ width: "100%", borderRadius: "12px", margin: "10px 0" }} />
-                {!recording ? (
-                  <button className={styles.orderBtn} onClick={handleStartRecording}>START RECORDING (40s)</button>
-                ) : (
-                  <button className={styles.orderBtn} onClick={handleStopRecording}>STOP RECORDING</button>
-                )}
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  style={{
+                    width: "100%",
+                    borderRadius: "12px",
+                    margin: "10px 0",
+                    maxHeight: "480px",
+                  }}
+                />
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  <button className={styles.orderBtn} onClick={handleTakePhoto}>
+                    TAKE PHOTO
+                  </button>
+
+                  {!recording ? (
+                    <button className={styles.orderBtn} onClick={handleStartRecording}>
+                      START RECORDING (40s)
+                    </button>
+                  ) : (
+                    <button className={styles.orderBtn} onClick={handleStopRecording}>
+                      STOP RECORDING
+                    </button>
+                  )}
+                </div>
               </>
             )}
 
             <button className={styles.orderBtn} onClick={() => fileInputRef.current?.click()}>
               UPLOAD FROM GALLERY
             </button>
-
-            <input ref={fileInputRef} type="file" accept="image/*,video/*" hidden onChange={handleFilePick} />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              hidden
+              onChange={handleFilePick}
+            />
           </div>
         </div>
       </section>
