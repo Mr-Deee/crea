@@ -91,20 +91,27 @@
     justify-content: center;
     position: relative;
   }
-  
-  .overlay {
+  .heroImage {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.55) 0%,
-      rgba(0, 0, 0, 0.35) 40%,
-      transparent 100%
-    );
-    display: flex;
-    align-items: center;
+    background-size: cover;
+    background-position: center;
+    transition: opacity 1s ease-in-out;
   }
   
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45); /* dark overlay for text visibility */
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 24px;
+    z-index: 2;
+  }
   /* ------------------------------
      Hero Left Content
   --------------------------------*/
@@ -132,8 +139,8 @@
   /* CTA Button */
   .orderBtn {
     margin-top: 25px;
-    padding: 14px 32px;
-    background: #ffb88c;
+    padding: 14px 22px;
+    background: rgba(255, 156, 197, 0.822); /* mid-pink */
     border: none;
     border-radius: 35px;
     font-size: 1.1rem;
