@@ -31,10 +31,27 @@
   }
   
   .logo {
-    font-size: 1.6rem;
-    font-weight: 700;
-    color: #d4754a;
+    width: 60px;
+    height: 45px; /* make it square for perfect rounding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    /* Liquid glass / semi-transparent effect */
+    background: rgba(255, 95, 162, 0.25); /* mid-pink */
+    backdrop-filter: blur(10px);
+    border-radius: 20%; /* fully circular */
+  
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* ensures image stays inside the circle */
   }
+  
+  .logo img {
+    max-height:600px;
+    max-width: 100%;
+    object-fit: contain;
+  }
+  
   
   .navlinks {
     list-style: none;

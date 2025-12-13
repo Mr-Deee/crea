@@ -100,7 +100,9 @@ export default function LandingPage() {
 
           {/* ✅ NAVBAR */}
     <nav className={styles.navbar}>
-      <div className={styles.logo}>CheeseCakes ✨</div>
+    <div className={styles.logo}>
+  <img src="/images/logo.png" alt="CheeseCakes Logo" />
+</div>
       <ul className={styles.navlinks}>
         <li>Home</li>
         <li>Menu</li>
