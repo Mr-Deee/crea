@@ -12,19 +12,24 @@ export default function LandingPage() {
     "/images/cheese2.jpg",
     "/images/cheese0.jpg",
     "/images/cheese3.jpg",
-    "/images/cheese.jpg",
   ];
 
   const [index, setIndex] = useState<number>(0);
+  const [recording, setRecording] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Auto-change hero images
   useEffect(() => {
     const interval = setInterval(() => setIndex((prev) => (prev + 1) % images.length), 4000);
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // 🔥 Upload file to Firebase Storage + Realtime DB
-  const uploadExperience = async (file: File, type: "image" | "video") => {
+  // Upload experience to Firebase
+  const uploadExperience = async (file: File, type: "image" | "video", name?: string, caption?: string) => {
     try {
       const path = `experiences/${Date.now()}_${file.name}`;
       const sRef = storageRef(storage, path);
@@ -35,6 +40,8 @@ export default function LandingPage() {
       await push(dbRef(database, "experiences"), {
         type,
         url,
+        name: name || null,
+        caption: caption || null,
         createdAt: Date.now(),
       });
 
@@ -45,76 +52,76 @@ export default function LandingPage() {
     }
   };
 
-  // 📷 Take photo using camera
-  const handleTakePhoto = async () => {
+  // Start camera preview
+  const handleStartCamera = async () => {
+    if (recording) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      const video = document.createElement("video");
-      video.srcObject = stream;
-      video.play();
-
-      await new Promise((resolve) => setTimeout(resolve, 500)); // allow camera to start
-
-      // Capture photo to canvas
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("Canvas not supported");
-
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `photo_${Date.now()}.png`, { type: "image/png" });
-          uploadExperience(file, "image");
-        }
-      }, "image/png");
-
-      stream.getTracks().forEach((track) => track.stop());
+      const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setStream(s);
+      if (videoRef.current) {
+        videoRef.current.srcObject = s;
+      }
     } catch (err) {
       console.error(err);
       alert("Camera access denied or unavailable");
     }
   };
 
-  // 🎥 Record 15-second video
-  const handleRecordVideo = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      const chunks: BlobPart[] = [];
+  // Start recording
+  const handleStartRecording = () => {
+    if (!stream) return;
+    const mediaRecorder = new MediaRecorder(stream);
+    chunksRef.current = [];
 
-      mediaRecorder.ondataavailable = (e: BlobEvent) => { if (e.data.size > 0) chunks.push(e.data); };
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(chunks, { type: "video/mp4" });
-        const file = new File([blob], `video_${Date.now()}.mp4`, { type: "video/mp4" });
-        uploadExperience(file, "video");
-        stream.getTracks().forEach((t) => t.stop());
-      };
+    mediaRecorder.ondataavailable = (e: BlobEvent) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
 
-      mediaRecorder.start();
-      setTimeout(() => mediaRecorder.stop(), 15000);
-    } catch (err) {
-      console.error(err);
-      alert("Camera access denied or unavailable");
+    mediaRecorder.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: "video/mp4" });
+      const file = new File([blob], `video_${Date.now()}.mp4`, { type: "video/mp4" });
+
+      const name = prompt("Enter your name:");
+      const caption = prompt("Enter a caption for your video:");
+
+      uploadExperience(file, "video", name || undefined, caption || undefined);
+
+      // Stop camera tracks
+      stream.getTracks().forEach((t) => t.stop());
+      setRecording(false);
+      setStream(null);
+    };
+
+    mediaRecorder.start();
+    setRecording(true);
+    mediaRecorderRef.current = mediaRecorder;
+
+    // Stop after 40 seconds
+    setTimeout(() => {
+      if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
+    }, 40000);
+  };
+
+  // Stop recording manually
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
     }
   };
 
-  // 🖼️ Pick image/video from gallery
+  // Upload from gallery
   const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-    uploadExperience(file, type);
+    const name = prompt("Enter your name:");
+    const caption = prompt("Enter a caption:");
+    uploadExperience(file, type, name || undefined, caption || undefined);
   };
 
   return (
     <main className={styles.main}>
+      {/* Navbar */}
       <nav className={styles.navbar}>
-        <div className={styles.logo}>
-          <img src="/images/logo.png" alt="CheeseCakes Logo" />
-        </div>
+        <div className={styles.logo}><img src="/images/logo.png" alt="CheeseCakes Logo" /></div>
         <ul className={styles.navlinks}>
           <li>Home</li>
           <li>Menu</li>
@@ -123,42 +130,38 @@ export default function LandingPage() {
         </ul>
       </nav>
 
+      {/* Hero Section */}
       <section className={styles.hero}>
-
-      {images.map((src, i) => (
-        
-    <div
-      key={i}
-      className={styles.heroImage}
-      style={{
-        backgroundImage: `url(${src})`,
-        opacity: i === index ? 1 : 0,
-      }}
-    />
-  ))}
+        {images.map((src, i) => (
+          <div key={i} className={styles.heroImage} style={{
+            backgroundImage: `url(${src})`,
+            opacity: i === index ? 1 : 0,
+          }} />
+        ))}
 
         <div className={styles.overlay}>
           <div className={styles.left}>
             <h1>Cheezy Memories 🧀</h1>
             <p>Capture and share your cheesecake experience</p>
 
-        
+            {!stream && <button className={styles.orderBtn} onClick={handleStartCamera}>OPEN CAMERA</button>}
 
-            <button className={styles.orderBtn} onClick={handleRecordVideo}>
-              RECORD VIDEO
-            </button>
+            {stream && (
+              <>
+                <video ref={videoRef} autoPlay muted style={{ width: "100%", borderRadius: "12px", margin: "10px 0" }} />
+                {!recording ? (
+                  <button className={styles.orderBtn} onClick={handleStartRecording}>START RECORDING (40s)</button>
+                ) : (
+                  <button className={styles.orderBtn} onClick={handleStopRecording}>STOP RECORDING</button>
+                )}
+              </>
+            )}
 
             <button className={styles.orderBtn} onClick={() => fileInputRef.current?.click()}>
               UPLOAD FROM GALLERY
             </button>
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*,video/*"
-              hidden
-              onChange={handleFilePick}
-            />
+            <input ref={fileInputRef} type="file" accept="image/*,video/*" hidden onChange={handleFilePick} />
           </div>
         </div>
       </section>
