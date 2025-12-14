@@ -16,18 +16,27 @@ export default function LandingPage() {
   const [index, setIndex] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
+
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // ✅ NEW: detect mobile
+  const isMobile =
+    typeof window !== "undefined" &&
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   // Auto-change hero images
   useEffect(() => {
-    const interval = setInterval(() => setIndex((prev) => (prev + 1) % images.length), 4000);
+    const interval = setInterval(
+      () => setIndex((prev) => (prev + 1) % images.length),
+      4000
+    );
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // Upload experience to Firebase
+  // Upload experience to Firebase (UNCHANGED)
   const uploadExperience = async (
     file: File,
     type: "image" | "video",
@@ -55,12 +64,18 @@ export default function LandingPage() {
     }
   };
 
-  // Start camera preview
+  // ✅ UPDATED: Open native camera on mobile, live camera on desktop
   const handleStartCamera = async () => {
+    if (isMobile) {
+      fileInputRef.current?.click(); // opens native camera app
+      return;
+    }
+
     if (stream) return;
+
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { width: 1280, height: 720 }, // better resolution
+        video: { width: 1280, height: 720 },
         audio: true,
       });
       setStream(s);
@@ -70,11 +85,11 @@ export default function LandingPage() {
       }
     } catch (err) {
       console.error("Camera access error:", err);
-      alert("Camera access denied or unavailable. Make sure you are on HTTPS or localhost.");
+      alert("Camera access denied or unavailable.");
     }
   };
 
-  // Take photo
+  // Take photo (desktop – unchanged)
   const handleTakePhoto = async () => {
     if (!stream || !videoRef.current) return;
 
@@ -82,23 +97,27 @@ export default function LandingPage() {
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, 0, 0);
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-      const file = new File([blob], `photo_${Date.now()}.png`, { type: "image/png" });
+      const file = new File([blob], `photo_${Date.now()}.png`, {
+        type: "image/png",
+      });
       const name = prompt("Enter your name:");
-      const caption = prompt("Enter a caption for your photo:");
+      const caption = prompt("Enter a caption:");
       await uploadExperience(file, "image", name || undefined, caption || undefined);
     });
   };
 
-  // Start recording video (40s max)
+  // Video recording (UNCHANGED)
   const handleStartRecording = () => {
     if (!stream) return;
+
     const mediaRecorder = new MediaRecorder(stream);
     chunksRef.current = [];
 
@@ -108,9 +127,11 @@ export default function LandingPage() {
 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "video/mp4" });
-      const file = new File([blob], `video_${Date.now()}.mp4`, { type: "video/mp4" });
+      const file = new File([blob], `video_${Date.now()}.mp4`, {
+        type: "video/mp4",
+      });
       const name = prompt("Enter your name:");
-      const caption = prompt("Enter a caption for your video:");
+      const caption = prompt("Enter a caption:");
       await uploadExperience(file, "video", name || undefined, caption || undefined);
       setRecording(false);
     };
@@ -119,32 +140,40 @@ export default function LandingPage() {
     mediaRecorderRef.current = mediaRecorder;
     setRecording(true);
 
-    // Auto-stop after 40 seconds
     setTimeout(() => {
       if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
     }, 40000);
   };
 
-  // Stop recording manually
+
+
+
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current;
+    if (!recorder) return;
+  
+    if (recorder.state !== "inactive") {
+      recorder.stop();
     }
   };
+  
 
-  // Upload from gallery
+  // Upload from camera/gallery (mobile + desktop)
   const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+
+    const type: "image" | "video" =
+      file.type.startsWith("video") ? "video" : "image";
+
     const name = prompt("Enter your name:");
     const caption = prompt("Enter a caption:");
+
     uploadExperience(file, type, name || undefined, caption || undefined);
   };
 
   return (
     <main className={styles.main}>
-      {/* Navbar */}
       <nav className={styles.navbar}>
         <div className={styles.logo}>
           <img src="/images/logo.png" alt="CheeseCakes Logo" />
@@ -157,16 +186,12 @@ export default function LandingPage() {
         </ul>
       </nav>
 
-      {/* Hero section */}
       <section className={styles.hero}>
         {images.map((src, i) => (
           <div
             key={i}
             className={styles.heroImage}
-            style={{
-              backgroundImage: `url(${src})`,
-              opacity: i === index ? 1 : 0,
-            }}
+            style={{ backgroundImage: `url(${src})`, opacity: i === index ? 1 : 0 }}
           />
         ))}
 
@@ -181,7 +206,7 @@ export default function LandingPage() {
               </button>
             )}
 
-            {stream && (
+            {stream && !isMobile && (
               <>
                 <video
                   ref={videoRef}
@@ -195,6 +220,7 @@ export default function LandingPage() {
                     maxHeight: "480px",
                   }}
                 />
+
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                   <button className={styles.orderBtn} onClick={handleTakePhoto}>
                     TAKE PHOTO
@@ -213,13 +239,12 @@ export default function LandingPage() {
               </>
             )}
 
-            <button className={styles.orderBtn} onClick={() => fileInputRef.current?.click()}>
-              UPLOAD FROM GALLERY
-            </button>
+            {/* Hidden input – mobile native camera */}
             <input
               ref={fileInputRef}
               type="file"
               accept="image/*,video/*"
+              capture
               hidden
               onChange={handleFilePick}
             />
