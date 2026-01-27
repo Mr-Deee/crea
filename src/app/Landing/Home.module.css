@@ -1,219 +1,338 @@
-/* ------------------------------
-   Global Layout
---------------------------------*/
+/* ==============================
+   GLOBAL RESET + BASE
+============================== */
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  font-family: "Poppins", sans-serif;
+  background: #fff7f2;
+  color: #2e2e2e;
+}
+
+/* ==============================
+   MAIN LAYOUT
+============================== */
 .main {
-    width: 100%;
-    min-height: 100vh;
-    overflow: hidden;
-    background: #fff7f2;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* ==============================
+   NAVBAR (LIQUID GLASS)
+============================== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 16px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.45);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 20;
+}
+
+.logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: rgba(255, 95, 162, 0.28);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+.logo img {
+  width: 80%;
+  height: auto;
+  object-fit: contain;
+}
+
+.navlinks {
+  display: flex;
+  list-style: none;
+  gap: 32px;
+}
+
+.navlinks li {
+  cursor: pointer;
+  font-weight: 500;
+  transition: color 0.25s ease;
+}
+
+.navlinks li:hover {
+  color: #d4754a;
+}
+
+@media (max-width: 850px) {
+  .navlinks {
+    display: none;
+  }
+}
+
+/* ==============================
+   HERO SECTION
+============================== */
+.hero {
+  height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: opacity 1s ease;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  padding: 24px;
+}
+
+.left {
+  max-width: 560px;
+  color: white;
+  margin-left: 6%;
+  animation: fadeIn 1.2s ease forwards;
+}
+
+.left h1 {
+  font-size: 3.4rem;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.left p {
+  margin-top: 14px;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+.orderBtn {
+  margin-top: 26px;
+  padding: 14px 26px;
+  border-radius: 40px;
+  border: none;
+  background: rgba(255, 180, 210, 0.9);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: #3b1f0f;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.25);
+  transition: all 0.3s ease;
+}
+
+.orderBtn:hover {
+  transform: translateY(-3px);
+  background: #ff9e63;
+}
+
+/* ==============================
+   MEMORIES SECTION
+============================== */
+.memoriesSection {
+  padding: 80px 20px;
+  background: #fff8f0;
+}
+
+.memoriesHeader {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.memoriesTitle {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+/* ==============================
+   LAYOUT TOGGLE
+============================== */
+.layoutToggle {
+  display: flex;
+  gap: 8px;
+}
+
+.layoutToggle button {
+  padding: 6px 16px;
+  border-radius: 22px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.layoutToggle button.active {
+  background: #ffcf8a;
+  border-color: #ffcf8a;
+  font-weight: 600;
+}
+
+/* ==============================
+   GRID / TILE LAYOUT
+============================== */
+.memoriesGrid {
+  max-width: 1200px;
+  margin: auto;
+  gap: 20px;
+}
+
+.tile {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* ==============================
+   LIQUID GLASS MEMORY CARD
+============================== */
+.memoryCard {
+  border-radius: 22px;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255,255,255,0.4);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+  transition: transform 0.25s ease;
+}
+
+.memoryCard:hover {
+  transform: translateY(-6px);
+}
+
+.memoryCard img,
+.memoryCard video {
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+}
+
+.memoryInfo {
+  padding: 14px;
+}
+
+.memoryInfo h4 {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.memoryInfo p {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+/* ==============================
+   TINDER SWIPE STACK (LIQUID GLASS)
+============================== */
+.tinderStack {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  height: 520px;
+  margin: 0 auto;
+}
+
+.tinderCard {
+  position: absolute;
+  inset: 0;
+  border-radius: 26px;
+  backdrop-filter: blur(18px);
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(255,255,255,0.45);
+  box-shadow: 0 25px 50px rgba(0,0,0,0.18);
+  overflow: hidden;
+  touch-action: pan-y;
+}
+
+.tinderCard img,
+.tinderCard video {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+}
+
+/* ==============================
+   MOBILE RESPONSIVE
+============================== */
+@media (max-width: 900px) {
+  .left h1 {
+    font-size: 2.6rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .memoriesHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .layoutToggle {
+    display: none;
+  }
+
+  .tile {
     display: flex;
     flex-direction: column;
-    font-family: "Poppins", sans-serif;
-    color: #2e2e2e;
   }
-  
-  /* ------------------------------
-     Navbar
-  --------------------------------*/
-  .navbar {
-    width: 100%;
-    padding: 20px 40px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    backdrop-filter: blur(12px);
-    background: rgba(255, 255, 255, 0.45);
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 20;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.25);
-  }
-  
-  .logo {
-    width: 60px;
-    height: 45px; /* make it square for perfect rounding */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  
-    /* Liquid glass / semi-transparent effect */
-    background: rgba(255, 95, 162, 0.25); /* mid-pink */
-    backdrop-filter: blur(10px);
-    border-radius: 20%; /* fully circular */
-  
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    overflow: hidden; /* ensures image stays inside the circle */
-  }
-  
-  .logo img {
-    max-height:600px;
-    max-width: 100%;
-    object-fit: contain;
-  }
-  
-  
-  .navlinks {
-    list-style: none;
-    display: flex;
-    gap: 35px;
-  }
-  
-  .navlinks li {
-    font-size: 1rem;
-    cursor: pointer;
-    transition: 0.3s ease;
-  }
-  
-  .navlinks li:hover {
-    color: #d4754a;
-  }
-  
-  /* Mobile menu hidden by default */
-  @media (max-width: 850px) {
-    .navlinks {
-      display: none;
-    }
-  }
-  
-  
-  /* ------------------------------
-     Hero Section
-  --------------------------------*/
+}
+
+@media (max-width: 700px) {
   .hero {
-    width: 100%;
-    height: 100vh;
-    background-size: cover;
-    background-position: center;
-    transition: background-image 1s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    height: 90vh;
   }
-  .heroImage {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-size: cover;
-    background-position: center;
-    transition: opacity 1s ease-in-out;
-  }
-  
-  .overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0,0,0,0.45); /* dark overlay for text visibility */
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 24px;
-    z-index: 2;
-  }
-  /* ------------------------------
-     Hero Left Content
-  --------------------------------*/
+
   .left {
-    max-width: 550px;
-    margin-left: 5%;
-    color: white;
-    animation: fadeIn 1.3s ease forwards;
+    margin-left: 0;
+    text-align: center;
+    padding: 0 20px;
   }
-  
-  .left h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    line-height: 1.1;
-  }
-  
-  .left p {
-    margin-top: 15px;
-    font-size: 1.2rem;
-    opacity: 0.92;
-    max-width: 420px;
-    line-height: 1.6;
-  }
-  
-  /* CTA Button */
+
   .orderBtn {
-    margin-top: 25px;
-    padding: 14px 22px;
-    background: rgba(255, 156, 197, 0.822); /* mid-pink */
-    border: none;
-    border-radius: 35px;
-    font-size: 1.1rem;
-    cursor: pointer;
-    font-weight: 600;
-    color: #3b1f0f;
-    transition: 0.35s ease;
-    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    width: 80%;
   }
-  
-  .orderBtn:hover {
-    background: #ff9e63;
-    transform: translateY(-3px);
+}
+
+@media (max-width: 450px) {
+  .left h1 {
+    font-size: 2.1rem;
   }
-  
-  /* ------------------------------
-     Keyframes
-  --------------------------------*/
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
+
+  .orderBtn {
+    width: 100%;
   }
-  
-  /* ------------------------------
-     Mobile Responsive
-  --------------------------------*/
-  @media (max-width: 900px) {
-    .left h1 {
-      font-size: 2.8rem;
-    }
+}
+
+/* ==============================
+   ANIMATIONS
+============================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(25px);
   }
-  
-  @media (max-width: 700px) {
-    .hero {
-      height: 90vh;
-    }
-  
-    .overlay {
-      background: rgba(0, 0, 0, 0.55);
-    }
-  
-    .left {
-      text-align: center;
-      margin-left: 0;
-      padding: 0 20px;
-    }
-  
-    .left h1 {
-      font-size: 2.4rem;
-    }
-  
-    .left p {
-      max-width: 100%;
-    }
-  
-    .orderBtn {
-      width: 70%;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
-  
-  @media (max-width: 450px) {
-    .left h1 {
-      font-size: 2rem;
-    }
-  
-    .orderBtn {
-      width: 90%;
-    }
-  }
-  
+}

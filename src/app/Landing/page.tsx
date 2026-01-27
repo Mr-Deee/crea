@@ -5,6 +5,7 @@ import { ref as dbRef, push } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, database } from "../firebase";
 import styles from "./Home.module.css";
+import { onValue, ref  } from "firebase/database";
 
 export default function LandingPage() {
   const images: string[] = [
@@ -13,10 +14,95 @@ export default function LandingPage() {
     "/images/cheese3.jpg",
   ];
 
+
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+const [startX, setStartX] = useState<number | null>(null);
+const [offsetX, setOffsetX] = useState(0);
+const [isDragging, setIsDragging] = useState(false);
+
+const SWIPE_THRESHOLD = 120;
+const AUTO_SWIPE_INTERVAL = 5000; // 5 seconds
+
+
+
+
+const handleStart = (x: number) => {
+  setStartX(x);
+  setIsDragging(true);
+};
+
+const handleMove = (x: number) => {
+  if (startX !== null) {
+    setOffsetX(x - startX);
+  }
+};
+
+const handleEnd = () => {
+  if (Math.abs(offsetX) > SWIPE_THRESHOLD) {
+    swipeNext();
+  } else {
+    // snap back
+    setOffsetX(0);
+  }
+
+  setStartX(null);
+  setIsDragging(false);
+};
+
+
+
+const swipeNext = () => {
+  setOffsetX(0);
+  setCurrentIndex((prev) =>
+    prev + 1 >= experiences.length ? 0 : prev + 1
+  );
+};
+
+
+  type Experience = {
+    id: string;
+    type: "image" | "video";
+    url: string;
+    name?: string;
+    caption?: string;
+    createdAt: number;
+  };
+
+
+  useEffect(() => {
+    const expRef = dbRef(database, "experiences");
+  
+    const unsubscribe = onValue(expRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        setExperiences([]);
+        return;
+      }
+  
+      const list: Experience[] = Object.entries(data)
+        .map(([id, value]: any) => ({
+          id,
+          ...value,
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt); // newest first
+  
+      setExperiences(list);
+    });
+  
+    return () => unsubscribe();
+  }, []);
+  
+  
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  
+
   const [index, setIndex] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
+  type LayoutMode = "stack" | "tile";
 
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("stack");
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
@@ -63,6 +149,9 @@ export default function LandingPage() {
       alert("Upload failed ❌");
     }
   };
+
+
+  
 
   // ✅ UPDATED: Open native camera on mobile, live camera on desktop
   const handleStartCamera = async () => {
@@ -180,7 +269,7 @@ export default function LandingPage() {
         </div>
         <ul className={styles.navlinks}>
           <li>Home</li>
-          <li>Menu</li>
+          <li>Memories</li>
           <li>Order</li>
           <li>Contact</li>
         </ul>
@@ -251,6 +340,96 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+
+
+      <section className={styles.memoriesSection} id="memories">
+  <div className={styles.memoriesHeader}>
+    <h2 className={styles.memoriesTitle}>Shared Memories 💛</h2>
+
+    {!isMobile && (
+      <div className={styles.layoutToggle}>
+        <button
+          className={layoutMode === "stack" ? styles.active : ""}
+          onClick={() => setLayoutMode("stack")}
+        >
+          Stack
+        </button>
+        <button
+          className={layoutMode === "tile" ? styles.active : ""}
+          onClick={() => setLayoutMode("tile")}
+        >
+          Tile
+        </button>
+      </div>
+    )}
+  </div>
+
+  {/* TILE MODE (desktop only) */}
+  {layoutMode === "tile" && !isMobile && (
+    <div className={`${styles.memoriesGrid} ${styles.tile}`}>
+      {experiences.map((exp) => (
+        <div key={exp.id} className={styles.memoryCard}>
+          {exp.type === "image" ? (
+            <img src={exp.url} />
+          ) : (
+            <video src={exp.url} controls />
+          )}
+          <div className={styles.memoryInfo}>
+            {exp.name && <h4>{exp.name}</h4>}
+            {exp.caption && <p>{exp.caption}</p>}
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+
+  {/* STACK MODE (Tinder style – mobile + desktop) */}
+  {(layoutMode === "stack" || isMobile) && (
+    <div className={styles.tinderStack}>
+      {experiences
+        .slice(currentIndex, currentIndex + 3)
+        .map((exp, i) => {
+          const isTop = i === 0;
+
+          return (
+            <div
+              key={exp.id}
+              className={styles.tinderCard}
+              style={{
+                transform: isTop
+                  ? `translateX(${offsetX}px) rotate(${offsetX / 15}deg)`
+                  : `scale(${1 - i * 0.05}) translateY(${i * 12}px)`,
+                zIndex: 10 - i,
+                transition: isTop ? "none" : "transform 0.3s ease",
+              }}
+              onMouseDown={(e) => handleStart(e.clientX)}
+              onMouseMove={(e) => isTop && handleMove(e.clientX)}
+              onMouseUp={handleEnd}
+              onMouseLeave={handleEnd}
+              onTouchStart={(e) => handleStart(e.touches[0].clientX)}
+              onTouchMove={(e) => handleMove(e.touches[0].clientX)}
+              onTouchEnd={handleEnd}
+            >
+              {exp.type === "image" ? (
+                <img src={exp.url} />
+              ) : (
+                <video src={exp.url} controls />
+              )}
+
+              <div className={styles.memoryInfo}>
+                {exp.name && <h4>{exp.name}</h4>}
+                {exp.caption && <p>{exp.caption}</p>}
+              </div>
+            </div>
+          );
+        })}
+    </div>
+  )}
+</section>
+
+
+
     </main>
   );
 }
