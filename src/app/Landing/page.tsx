@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, ChangeEvent } from "react";
-import { ref as dbRef, push } from "firebase/database";
+import { ref as dbRef, push, onValue } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, database } from "../firebase";
 import styles from "./Home.module.css";
-import { onValue, ref  } from "firebase/database";
 
 export default function LandingPage() {
   const images: string[] = [
@@ -14,51 +13,26 @@ export default function LandingPage() {
     "/images/cheese3.jpg",
   ];
 
-
+  const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [index, setIndex] = useState(0);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [recording, setRecording] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("stack");
 
   const [currentIndex, setCurrentIndex] = useState(0);
-const [startX, setStartX] = useState<number | null>(null);
-const [offsetX, setOffsetX] = useState(0);
-const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState<number | null>(null);
+  const [offsetX, setOffsetX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [fullscreenImg, setFullscreenImg] = useState<string | null>(null);
 
-const SWIPE_THRESHOLD = 120;
-const AUTO_SWIPE_INTERVAL = 5000; // 5 seconds
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<BlobPart[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const SWIPE_THRESHOLD = 120;
 
-
-
-const handleStart = (x: number) => {
-  setStartX(x);
-  setIsDragging(true);
-};
-
-const handleMove = (x: number) => {
-  if (startX !== null) {
-    setOffsetX(x - startX);
-  }
-};
-
-const handleEnd = () => {
-  if (Math.abs(offsetX) > SWIPE_THRESHOLD) {
-    swipeNext();
-  } else {
-    // snap back
-    setOffsetX(0);
-  }
-
-  setStartX(null);
-  setIsDragging(false);
-};
-
-
-
-const swipeNext = () => {
-  setOffsetX(0);
-  setCurrentIndex((prev) =>
-    prev + 1 >= experiences.length ? 0 : prev + 1
-  );
-};
-
+  type LayoutMode = "stack" | "tile";
 
   type Experience = {
     id: string;
@@ -69,46 +43,7 @@ const swipeNext = () => {
     createdAt: number;
   };
 
-
-  useEffect(() => {
-    const expRef = dbRef(database, "experiences");
-  
-    const unsubscribe = onValue(expRef, (snapshot) => {
-      const data = snapshot.val();
-      if (!data) {
-        setExperiences([]);
-        return;
-      }
-  
-      const list: Experience[] = Object.entries(data)
-        .map(([id, value]: any) => ({
-          id,
-          ...value,
-        }))
-        .sort((a, b) => b.createdAt - a.createdAt); // newest first
-  
-      setExperiences(list);
-    });
-  
-    return () => unsubscribe();
-  }, []);
-  
-  
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  
-
-  const [index, setIndex] = useState(0);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const [recording, setRecording] = useState(false);
-  type LayoutMode = "stack" | "tile";
-
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>("stack");
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<BlobPart[]>([]);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-
-  // ✅ NEW: detect mobile
+  // Detect mobile
   const isMobile =
     typeof window !== "undefined" &&
     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -122,7 +57,65 @@ const swipeNext = () => {
     return () => clearInterval(interval);
   }, [images.length]);
 
-  // Upload experience to Firebase (UNCHANGED)
+  // Fetch experiences from Firebase
+  useEffect(() => {
+    const expRef = dbRef(database, "experiences");
+
+    const unsubscribe = onValue(expRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) {
+        setExperiences([]);
+        return;
+      }
+
+      const list: Experience[] = Object.entries(data)
+        .map(([id, value]: any) => ({
+          id,
+          ...value,
+        }))
+        .sort((a, b) => b.createdAt - a.createdAt); // newest first
+
+      setExperiences(list);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Auto swipe every 5s
+  useEffect(() => {
+    if (!isMobile) return; // optional: auto-swipe only on desktop
+    const timer = setInterval(() => swipeNext(), 5000);
+    return () => clearInterval(timer);
+  }, [currentIndex, experiences]);
+
+  // Swipe handlers
+  const handleStart = (x: number) => {
+    setStartX(x);
+    setIsDragging(true);
+  };
+
+  const handleMove = (x: number) => {
+    if (startX !== null) setOffsetX(x - startX);
+  };
+
+  const handleEnd = () => {
+    if (Math.abs(offsetX) > SWIPE_THRESHOLD) {
+      swipeNext();
+    } else {
+      setOffsetX(0); // snap back
+    }
+    setStartX(null);
+    setIsDragging(false);
+  };
+
+  const swipeNext = () => {
+    setOffsetX(0);
+    setCurrentIndex((prev) =>
+      prev + 1 >= experiences.length ? 0 : prev + 1
+    );
+  };
+
+  // Upload experience
   const uploadExperience = async (
     file: File,
     type: "image" | "video",
@@ -150,16 +143,12 @@ const swipeNext = () => {
     }
   };
 
-
-  
-
-  // ✅ UPDATED: Open native camera on mobile, live camera on desktop
+  // Camera / file handling
   const handleStartCamera = async () => {
     if (isMobile) {
-      fileInputRef.current?.click(); // opens native camera app
+      fileInputRef.current?.click();
       return;
     }
-
     if (stream) return;
 
     try {
@@ -168,101 +157,76 @@ const swipeNext = () => {
         audio: true,
       });
       setStream(s);
-      if (videoRef.current) {
-        videoRef.current.srcObject = s;
-        await videoRef.current.play().catch(() => {});
-      }
+      if (videoRef.current) videoRef.current.srcObject = s;
     } catch (err) {
-      console.error("Camera access error:", err);
       alert("Camera access denied or unavailable.");
     }
   };
 
-  // Take photo (desktop – unchanged)
   const handleTakePhoto = async () => {
     if (!stream || !videoRef.current) return;
 
-    const video = videoRef.current;
     const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(videoRef.current, 0, 0);
 
     canvas.toBlob(async (blob) => {
       if (!blob) return;
-      const file = new File([blob], `photo_${Date.now()}.png`, {
-        type: "image/png",
-      });
+      const file = new File([blob], `photo_${Date.now()}.png`, { type: "image/png" });
       const name = prompt("Enter your name:");
       const caption = prompt("Enter a caption:");
       await uploadExperience(file, "image", name || undefined, caption || undefined);
     });
   };
 
-  // Video recording (UNCHANGED)
   const handleStartRecording = () => {
     if (!stream) return;
-
-    const mediaRecorder = new MediaRecorder(stream);
+    const recorder = new MediaRecorder(stream);
     chunksRef.current = [];
 
-    mediaRecorder.ondataavailable = (e: BlobEvent) => {
+    recorder.ondataavailable = (e: BlobEvent) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
 
-    mediaRecorder.onstop = async () => {
+    recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, { type: "video/mp4" });
-      const file = new File([blob], `video_${Date.now()}.mp4`, {
-        type: "video/mp4",
-      });
+      const file = new File([blob], `video_${Date.now()}.mp4`, { type: "video/mp4" });
       const name = prompt("Enter your name:");
       const caption = prompt("Enter a caption:");
       await uploadExperience(file, "video", name || undefined, caption || undefined);
       setRecording(false);
     };
 
-    mediaRecorder.start();
-    mediaRecorderRef.current = mediaRecorder;
+    recorder.start();
+    mediaRecorderRef.current = recorder;
     setRecording(true);
 
     setTimeout(() => {
-      if (mediaRecorder.state !== "inactive") mediaRecorder.stop();
+      if (recorder.state !== "inactive") recorder.stop();
     }, 40000);
   };
 
-
-
-
   const handleStopRecording = () => {
     const recorder = mediaRecorderRef.current;
-    if (!recorder) return;
-  
-    if (recorder.state !== "inactive") {
-      recorder.stop();
-    }
+    if (recorder && recorder.state !== "inactive") recorder.stop();
   };
-  
 
-  // Upload from camera/gallery (mobile + desktop)
   const handleFilePick = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const type: "image" | "video" =
-      file.type.startsWith("video") ? "video" : "image";
-
+    const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
     const name = prompt("Enter your name:");
     const caption = prompt("Enter a caption:");
-
     uploadExperience(file, type, name || undefined, caption || undefined);
   };
 
   return (
     <main className={styles.main}>
+      {/* Navbar */}
       <nav className={styles.navbar}>
         <div className={styles.logo}>
           <img src="/images/logo.png" alt="CheeseCakes Logo" />
@@ -275,6 +239,7 @@ const swipeNext = () => {
         </ul>
       </nav>
 
+      {/* Hero */}
       <section className={styles.hero}>
         {images.map((src, i) => (
           <div
@@ -283,17 +248,12 @@ const swipeNext = () => {
             style={{ backgroundImage: `url(${src})`, opacity: i === index ? 1 : 0 }}
           />
         ))}
-
         <div className={styles.overlay}>
           <div className={styles.left}>
             <h1>Cheezy Memories 🧀</h1>
             <p>Capture and share your cheesecake experience</p>
 
-            {!stream && (
-              <button className={styles.orderBtn} onClick={handleStartCamera}>
-                OPEN CAMERA
-              </button>
-            )}
+            {!stream && <button className={styles.orderBtn} onClick={handleStartCamera}>OPEN CAMERA</button>}
 
             {stream && !isMobile && (
               <>
@@ -302,33 +262,19 @@ const swipeNext = () => {
                   autoPlay
                   playsInline
                   muted
-                  style={{
-                    width: "100%",
-                    borderRadius: "12px",
-                    margin: "10px 0",
-                    maxHeight: "480px",
-                  }}
+                  style={{ width: "100%", borderRadius: "12px", margin: "10px 0", maxHeight: "480px" }}
                 />
-
                 <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  <button className={styles.orderBtn} onClick={handleTakePhoto}>
-                    TAKE PHOTO
-                  </button>
-
+                  <button className={styles.orderBtn} onClick={handleTakePhoto}>TAKE PHOTO</button>
                   {!recording ? (
-                    <button className={styles.orderBtn} onClick={handleStartRecording}>
-                      START RECORDING (40s)
-                    </button>
+                    <button className={styles.orderBtn} onClick={handleStartRecording}>START RECORDING (40s)</button>
                   ) : (
-                    <button className={styles.orderBtn} onClick={handleStopRecording}>
-                      STOP RECORDING
-                    </button>
+                    <button className={styles.orderBtn} onClick={handleStopRecording}>STOP RECORDING</button>
                   )}
                 </div>
               </>
             )}
 
-            {/* Hidden input – mobile native camera */}
             <input
               ref={fileInputRef}
               type="file"
@@ -341,95 +287,81 @@ const swipeNext = () => {
         </div>
       </section>
 
-
-
+      {/* Memories Section */}
       <section className={styles.memoriesSection} id="memories">
-  <div className={styles.memoriesHeader}>
-    <h2 className={styles.memoriesTitle}>Shared Memories 💛</h2>
-
-    {!isMobile && (
-      <div className={styles.layoutToggle}>
-        <button
-          className={layoutMode === "stack" ? styles.active : ""}
-          onClick={() => setLayoutMode("stack")}
-        >
-          Stack
-        </button>
-        <button
-          className={layoutMode === "tile" ? styles.active : ""}
-          onClick={() => setLayoutMode("tile")}
-        >
-          Tile
-        </button>
-      </div>
-    )}
-  </div>
-
-  {/* TILE MODE (desktop only) */}
-  {layoutMode === "tile" && !isMobile && (
-    <div className={`${styles.memoriesGrid} ${styles.tile}`}>
-      {experiences.map((exp) => (
-        <div key={exp.id} className={styles.memoryCard}>
-          {exp.type === "image" ? (
-            <img src={exp.url} />
-          ) : (
-            <video src={exp.url} controls />
-          )}
-          <div className={styles.memoryInfo}>
-            {exp.name && <h4>{exp.name}</h4>}
-            {exp.caption && <p>{exp.caption}</p>}
-          </div>
-        </div>
-      ))}
-    </div>
-  )}
-
-  {/* STACK MODE (Tinder style – mobile + desktop) */}
-  {(layoutMode === "stack" || isMobile) && (
-    <div className={styles.tinderStack}>
-      {experiences
-        .slice(currentIndex, currentIndex + 3)
-        .map((exp, i) => {
-          const isTop = i === 0;
-
-          return (
-            <div
-              key={exp.id}
-              className={styles.tinderCard}
-              style={{
-                transform: isTop
-                  ? `translateX(${offsetX}px) rotate(${offsetX / 15}deg)`
-                  : `scale(${1 - i * 0.05}) translateY(${i * 12}px)`,
-                zIndex: 10 - i,
-                transition: isTop ? "none" : "transform 0.3s ease",
-              }}
-              onMouseDown={(e) => handleStart(e.clientX)}
-              onMouseMove={(e) => isTop && handleMove(e.clientX)}
-              onMouseUp={handleEnd}
-              onMouseLeave={handleEnd}
-              onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-              onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-              onTouchEnd={handleEnd}
-            >
-              {exp.type === "image" ? (
-                <img src={exp.url} />
-              ) : (
-                <video src={exp.url} controls />
-              )}
-
-              <div className={styles.memoryInfo}>
-                {exp.name && <h4>{exp.name}</h4>}
-                {exp.caption && <p>{exp.caption}</p>}
-              </div>
+        <div className={styles.memoriesHeader}>
+          <h2 className={styles.memoriesTitle}>Shared Memories 💛</h2>
+          {!isMobile && (
+            <div className={styles.layoutToggle}>
+              <button className={layoutMode === "stack" ? styles.active : ""} onClick={() => setLayoutMode("stack")}>Stack</button>
+              <button className={layoutMode === "tile" ? styles.active : ""} onClick={() => setLayoutMode("tile")}>Tile</button>
             </div>
-          );
-        })}
-    </div>
-  )}
-</section>
+          )}
+        </div>
 
+        {/* Tile layout */}
+        {layoutMode === "tile" && !isMobile && (
+          <div className={`${styles.memoriesGrid} ${styles.tile}`}>
+            {experiences.map(exp => (
+              <div key={exp.id} className={styles.memoryCard}>
+                {exp.type === "image" ? (
+                  <img src={exp.url} onClick={() => setFullscreenImg(exp.url)} style={{ cursor: "pointer" }} />
+                ) : (
+                  <video src={exp.url} controls preload="metadata" style={{ height: "240px", objectFit: "cover" }} />
+                )}
+                <div className={styles.memoryInfo}>
+                  {exp.name && <h4>{exp.name}</h4>}
+                  {exp.caption && <p>{exp.caption}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
+        {/* Stack layout */}
+        {(layoutMode === "stack" || isMobile) && (
+          <div className={styles.tinderStack}>
+            {experiences.slice(currentIndex, currentIndex + 3).map((exp, i) => {
+              const isTop = i === 0;
+              return (
+                <div
+                  key={exp.id}
+                  className={styles.tinderCard}
+                  style={{
+                    transform: isTop ? `translateX(${offsetX}px) rotate(${offsetX / 15}deg)` : `scale(${1 - i*0.05}) translateY(${i*12}px)`,
+                    zIndex: 10 - i,
+                    transition: isTop ? "none" : "transform 0.3s ease",
+                  }}
+                  onMouseDown={e => handleStart(e.clientX)}
+                  onMouseMove={e => isTop && handleMove(e.clientX)}
+                  onMouseUp={handleEnd}
+                  onMouseLeave={handleEnd}
+                  onTouchStart={e => handleStart(e.touches[0].clientX)}
+                  onTouchMove={e => handleMove(e.touches[0].clientX)}
+                  onTouchEnd={handleEnd}
+                >
+                  {exp.type === "image" ? (
+                    <img src={exp.url} onClick={() => setFullscreenImg(exp.url)} style={{ cursor: "pointer" }} />
+                  ) : (
+                    <video src={exp.url} controls preload="metadata" style={{ height: "240px", objectFit: "cover" }} />
+                  )}
+                  <div className={styles.memoryInfo}>
+                    {exp.name && <h4>{exp.name}</h4>}
+                    {exp.caption && <p>{exp.caption}</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
 
+      {/* Fullscreen Modal */}
+      {fullscreenImg && (
+        <div className={styles.fullscreenOverlay} onClick={() => setFullscreenImg(null)}>
+          <img src={fullscreenImg} alt="Memory Fullscreen" />
+        </div>
+      )}
     </main>
   );
 }

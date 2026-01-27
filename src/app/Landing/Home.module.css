@@ -220,6 +220,35 @@ html, body {
   transform: translateY(-6px);
 }
 
+
+/* Fullscreen Image Modal */
+.fullscreenOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  cursor: pointer;
+  padding: 20px;
+}
+
+.fullscreenOverlay img {
+  max-width: 95%;
+  max-height: 95%;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.fullscreenOverlay img:hover {
+  transform: scale(1.02);
+}
+
+/* Optional: close on ESC */
+
+
 .memoryCard img,
 .memoryCard video {
   width: 100%;
