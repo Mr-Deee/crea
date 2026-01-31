@@ -5,6 +5,7 @@ import { ref as dbRef, push, onValue } from "firebase/database";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage, database } from "../firebase";
 import styles from "./Home.module.css";
+import Image from "next/image";
 
 export default function LandingPage() {
   const images: string[] = [
@@ -18,6 +19,7 @@ export default function LandingPage() {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("stack");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [startX, setStartX] = useState<number | null>(null);
@@ -226,18 +228,40 @@ export default function LandingPage() {
 
   return (
     <main className={styles.main}>
-      {/* Navbar */}
-      <nav className={styles.navbar}>
-        <div className={styles.logo}>
-          <img src="/images/logo.png" alt="CheeseCakes Logo" />
-        </div>
-        <ul className={styles.navlinks}>
-          <li>Home</li>
-          <li>Memories</li>
-          <li>Order</li>
-          <li>Contact</li>
-        </ul>
-      </nav>
+
+<div className={styles.logo}>
+    <img src="/images/logo.png" alt="CheeseCakes Logo" />
+  </div>
+      <nav className={styles.navbar} aria-label="Main Navigation">
+   
+
+  <ul className={styles.navlinks}>
+    <li>Home</li>
+    <li>Memories</li>
+    <li>Order</li>
+    <li>Contact</li>
+  </ul>
+
+  <div
+    className={`${styles.hamburger} ${mobileMenuOpen ? styles.open : ""}`}
+    onClick={() => setMobileMenuOpen((prev) => !prev)}
+  >
+    <span />
+    <span />
+    <span />
+  </div>
+
+  <div className={`${styles.mobileMenu} ${mobileMenuOpen ? styles.show : ""}`}>
+    <ul>
+      <li>Home</li>
+      <li>Memories</li>
+      <li>Order</li>
+      <li>Contact</li>
+    </ul>
+  </div>
+</nav>
+
+
 
       {/* Hero */}
       <section className={styles.hero}>
@@ -251,9 +275,9 @@ export default function LandingPage() {
         <div className={styles.overlay}>
           <div className={styles.left}>
             <h1>Cheezy Memories 🧀</h1>
-            <p>Capture and share your cheesecake experience</p>
+            <p>Share your Indulgence</p>
 
-            {!stream && <button className={styles.orderBtn} onClick={handleStartCamera}>OPEN CAMERA</button>}
+            {!stream && <button className={styles.orderBtn} onClick={handleStartCamera}>Share Memory</button>}
 
             {stream && !isMobile && (
               <>
@@ -290,7 +314,7 @@ export default function LandingPage() {
       {/* Memories Section */}
       <section className={styles.memoriesSection} id="memories">
         <div className={styles.memoriesHeader}>
-          <h2 className={styles.memoriesTitle}>Shared Memories 💛</h2>
+          <h2 className={styles.memoriesTitle}>Whispers Of Endulgence</h2>
           {!isMobile && (
             <div className={styles.layoutToggle}>
               <button className={layoutMode === "stack" ? styles.active : ""} onClick={() => setLayoutMode("stack")}>Stack</button>
