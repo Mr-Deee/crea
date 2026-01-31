@@ -75,6 +75,85 @@
 }
 
 /* ==============================
+   MOBILE MENU - CENTERED GLASS STYLE
+============================== */
+.mobileMenu {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 10, 0.85);
+  backdrop-filter: blur(24px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 50;
+  padding: 20px;
+}
+
+.mobileMenu.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mobileMenu ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;           /* vertical spacing between items */
+  font-size: 2rem;     /* big, easy-to-read text */
+  color: #fff;
+  text-align: center;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 280px;    /* keeps items nicely centered */
+}
+
+.mobileMenu li {
+  cursor: pointer;
+  padding: 12px 20px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);  /* subtle glassy effect */
+  backdrop-filter: blur(10px);
+  transition: all 0.25s ease;
+  text-align: center;
+  width: 100%;
+}
+
+.mobileMenu li:hover {
+  color: #ff9e63;
+  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Make menu scrollable on very short screens */
+@media (max-height: 600px) {
+  .mobileMenu {
+    overflow-y: auto;
+  }
+}
+
+/* Hamburger toggle remains centered */
+.hamburger {
+  display: none; /* only shows on mobile via media query */
+}
+
+@media (max-width: 850px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .navlinks {
+    display: none;
+  }
+}
+
+
+
+/* ==============================
    DESKTOP LINKS (RIGHT)
 ============================== */
 .navlinks {
@@ -117,40 +196,8 @@
   border-radius: 2px;
 }
 
-/* ==============================
-   MOBILE MENU
-============================== */
-.mobileMenu {
-  position: fixed;
-  inset: 0;
-  background: rgba(10, 10, 10, 0.85);
-  backdrop-filter: blur(24px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
 
-.mobileMenu.show {
-  opacity: 1;
-  pointer-events: auto;
-}
 
-.mobileMenu ul {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  font-size: 24px;
-  color: white;
-  text-align: center;
-}
-
-.mobileMenu li {
-  cursor: pointer;
-}
 
 /* ==============================
    RESPONSIVE
@@ -160,14 +207,41 @@
     display: none;
   }
 
+  /* Show hamburger menu */
   .hamburger {
     display: flex;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
   }
 
+  /* Adjust navbar style */
   .navbar {
-    width: calc(100% - 32px);
+    background: rgba(255, 255, 255, 0.23); /* cleaner semi-transparent */
     padding: 12px 20px;
+    backdrop-filter: blur(10px); /* optional glass effect */
   }
+
+  /* Optional: full-screen dropdown for hamburger menu */
+  .navlinks.mobile-active {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 60px; /* adjust according to navbar height */
+    right: 0;
+    width: 200px; /* adjust width */
+    background: #fff;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 1000;
+  }
+
+  .navlinks.mobile-active li {
+    margin: 10px 0;
+  }
+
+  
 }
 
 
