@@ -32,6 +32,33 @@ export default function LandingPage() {
   const chunksRef = useRef<BlobPart[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const [cheesecake, setCheesecake] = useState("Blueberry");
+  const [deliveryStyle, setDeliveryStyle] = useState("Pickup");
+  const [location, setLocation] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [notes, setNotes] = useState("");
+
+
+
+
+
+
+  const handleSubmit = () => {
+    const orderMessage = `
+  Order Details:
+  Cheesecake: ${cheesecake}
+  Delivery: ${deliveryStyle}
+  Location: ${deliveryStyle === "Delivery" ? location : "Pickup"}
+  Quantity: ${quantity}
+  Notes: ${notes}
+    `;
+  
+    const whatsappNumber = "233508760316"; // Replace with your WhatsApp number
+    const whatsappURL = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(orderMessage)}`;
+  
+    window.open(whatsappURL, "_blank");
+  };
+  
   const SWIPE_THRESHOLD = 120;
 
   type LayoutMode = "stack" | "tile";
@@ -232,14 +259,20 @@ export default function LandingPage() {
 <div className={styles.logo}>
     <img src="/images/logo.png" alt="CheeseCakes Logo" />
   </div>
-      <nav className={styles.navbar} aria-label="Main Navigation">
-   
-
+  <nav className={styles.navbar} aria-label="Main Navigation">
   <ul className={styles.navlinks}>
-    <li>Home</li>
-    <li>Memories</li>
-    <li>Order</li>
-    <li>Contact</li>
+    <li>
+      <a href="#home">Home</a>
+    </li>
+    <li>
+      <a href="#memories">Memories</a>
+    </li>
+    <li>
+      <a href="#order">Order</a>
+    </li>
+    <li>
+      <a href="#contact">Contact</a>
+    </li>
   </ul>
 
   <div
@@ -251,16 +284,24 @@ export default function LandingPage() {
     <span />
   </div>
 
+  {/* MOBILE MENU */}
   <div className={`${styles.mobileMenu} ${mobileMenuOpen ? styles.show : ""}`}>
     <ul>
-      <li>Home</li>
-      <li>Memories</li>
-      <li>Order</li>
-      <li>Contact</li>
+      <li>
+        <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
+      </li>
+      <li>
+        <a href="#memories" onClick={() => setMobileMenuOpen(false)}>Memories</a>
+      </li>
+      <li>
+        <a href="#order" onClick={() => setMobileMenuOpen(false)}>Order</a>
+      </li>
+      <li>
+        <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
+      </li>
     </ul>
   </div>
 </nav>
-
 
 
       {/* Hero */}
@@ -386,6 +427,113 @@ export default function LandingPage() {
           <img src={fullscreenImg} alt="Memory Fullscreen" />
         </div>
       )}
+
+
+      {/* Order Section */}
+
+
+      <section id="order" className={styles.orderSection}>
+  <h2 className={styles.orderTitle}>Place Your Order</h2>
+
+  <div className={styles.orderGrid}>
+    {/* LEFT: MENU IMAGE */}
+    <div className={styles.menuImageWrapper}>
+      <img
+        src="/images/menu.jpg"   // 👈 your menu image
+        alt="Cheesecake Menu"
+        className={styles.menuImage}
+      />
+    </div>
+
+    {/* RIGHT: PICKUP TYPE */}
+    <div className={styles.pickupType}>
+      <h3>Place Your Order</h3>
+
+      {/* Cheesecake type */}
+      <label>
+        Select Cheesecake Type
+        <select
+          value={cheesecake}
+          onChange={(e) => setCheesecake(e.target.value)}
+          className={styles.selectInput}
+        >
+          <option value="Blueberry">Blueberry Cheesecake - GHS 120</option>
+          <option value="Strawberry">Strawberry Cheesecake - GHS 120</option>
+          <option value="Raspberry">Raspberry Cheesecake - GHS 120</option>
+        </select>
+      </label>
+
+      {/* Delivery style */}
+      <div className={styles.pickupOptions}>
+        <button
+          type="button"
+          className={`${styles.option} ${deliveryStyle === "Pickup" ? styles.activeOption : ""}`}
+          onClick={() => setDeliveryStyle("Pickup")}
+        >
+          🏃‍♂️ Pickup
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.option} ${deliveryStyle === "Delivery" ? styles.activeOption : ""}`}
+          onClick={() => setDeliveryStyle("Delivery")}
+        >
+          🚚 Delivery
+        </button>
+      </div>
+
+      {/* Location only if Delivery */}
+      {deliveryStyle === "Delivery" && (
+        <label>
+          Delivery Location
+          <input
+            type="text"
+            placeholder="Enter address"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+            className={styles.textInput}
+          />
+        </label>
+      )}
+
+      {/* Quantity */}
+      <label>
+        Quantity
+        <input
+          type="number"
+          min={1}
+          value={quantity}
+          onChange={(e) => setQuantity(parseInt(e.target.value))}
+          className={styles.textInput}
+        />
+      </label>
+
+      {/* Additional notes */}
+      <label>
+        Any Notes / Instructions
+        <textarea
+          placeholder="E.g. extra toppings, birthday note..."
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className={styles.textAreaInput}
+        />
+      </label>
+
+      <button className={styles.orderBtn} onClick={handleSubmit}>
+        Submit Order
+      </button>
+      </div>
+      </div>
+
+</section>
+
+
+
+
+
+
+
+
     </main>
   );
 }

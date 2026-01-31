@@ -2,13 +2,6 @@
    GLOBAL RESET + BASE
 ============================== */
 
-html, body {
-  width: 100%;
-  min-height: 100%;
-  font-family: "Poppins", sans-serif;
-  background: #fff7f2;
-  color: #2e2e2e;
-}
 
 /* ==============================
    MAIN LAYOUT
@@ -23,30 +16,6 @@ html, body {
 
 
 
-
-/* 🌟 LOGO LEFT */
-.logoWrapper {
-  position: fixed;
-  top: 10px;
- 
-
-  z-index: 1001;
-}
-
-.logo {
-  position: fixed;
-  top: 10px;
-left: 30px;
-  z-index: 1001;
-height: 12px;
-width: 40px;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
-  transition: transform 0.4s ease;
-}
-
-.logo:hover {
-  transform: scale(1.05);
-}
 
 /* ==============================
    NAVBAR (GLASS STYLE)
@@ -76,10 +45,16 @@ width: 40px;
    LOGO (LEFT)
 ============================== */
 .logo {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
 
+  border-radius: 10px;
+  position: fixed;
+  top: 10px;
+  left: 30px;
+  z-index: 1001;
+  height: 40px;
+  width: 61px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.15));
+  transition: transform 0.4s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,7 +69,8 @@ width: 40px;
 }
 
 .logo img {
-  width: 80%;
+  width: 90%;
+  border-radius: 8px;
   height: auto;
 }
 
@@ -248,7 +224,7 @@ width: 40px;
   margin-top: 26px;
   padding: 14px 26px;
   border-radius: 40px;
-  border: none;
+  border: 1px solid #080000;
   background: rgba(255, 180, 210, 0.9);
   font-size: 1.05rem;
   font-weight: 600;
@@ -576,5 +552,184 @@ width: 40px;
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+/* ==============================
+   ORDER SECTION
+============================== */
+.orderSection {
+  padding: 120px 40px;
+  background: #fff8f0;
+}
+
+.orderTitle {
+  text-align: center;
+  font-size: 32px;
+  color: #3b1f0f;
+  margin-bottom: 60px;
+}
+
+/* GRID */
+.orderGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* LEFT MENU IMAGE */
+.menuImageWrapper {
+  background: white;
+  border-radius: 22px;
+  padding: 16px;
+  box-shadow: 0 12px 35px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.menuImage {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  object-fit: contain;
+}
+
+/* RIGHT PICKUP / ORDER FORM */
+.pickupType {
+  background: white;
+  color: #A10F2B;
+  border-radius:52px;
+  padding: 32px;
+  box-shadow: 0 12px 35px rgba(255, 255, 255, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* PICKUP OPTIONS BUTTONS */
+.pickupOptions {
+  display: flex;
+  gap: 20px;
+}
+
+.option {
+  flex: 1;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid #ddd;
+  background: rgb(255, 255, 255);
+  color: #000;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.option:hover,
+.option.activeOption {
+  background: #A10F2B;
+  color: white;
+  border-color: #d31c1c;
+}
+
+/* ORDER FORM INPUTS */
+.selectInput {
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 15px;
+  border-radius: 16px;
+  border: 1px solid #080000;
+  outline: none;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(12px);
+  color: #2e2e2e;
+  appearance: none; /* remove default arrow */
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.selectInput:hover {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.selectInput:focus {
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid #ff9e63;
+  color: #111;
+}
+
+/* Custom arrow using pseudo-element */
+.selectInputWrapper {
+  position: relative;
+}
+
+.selectInputWrapper::after {
+  content: "▼";
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 12px;
+  color: #2e2e2e;
+}
+
+
+
+.textInput,
+.textAreaInput {
+  width: 100%;
+  padding: 12px;
+  margin-top: 6px;
+  margin-bottom: 20px;
+  background-color: white;
+  color: #050505;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.selectInput:focus,
+.textInput:focus,
+.textAreaInput:focus {
+  border-color: #ff9e63;
+}
+
+.textAreaInput {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* ORDER BUTTON */
+.orderBtn {
+  margin-top: auto;
+  padding: 16px;
+  border-radius: 16px;
+  border: none;
+  background:#A10F2B;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.orderBtn:hover {
+  transform: translateY(-2px);
+  background: #ff9e63;
+}
+
+/* ==============================
+   RESPONSIVE
+============================== */
+@media (max-width: 900px) {
+  .orderGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .menuImageWrapper {
+    padding: 12px;
   }
 }
