@@ -448,6 +448,11 @@ export default function LandingPage() {
           onChange={(e) => setCheesecake(e.target.value)}
           className={styles.selectInput}
         >
+          <option value="Plain Cheesecake">Plain Cheesecake - GHS 100</option>
+          <option value="Oreo Cheesecake">Oreo Cheesecake - GHS 130</option>
+          <option value="Burnt Basque Cheesecake">Burnt Basque Cheesecakee - GHS 300</option>
+          <option value="Lotus Cheescake">Lotus Cheescake - GHS 150</option>
+          <option value="NYC Cheescake">NYC Cheescake - GHS 300</option>
           <option value="Blueberry">Blueberry Cheesecake - GHS 120</option>
           <option value="Strawberry">Strawberry Cheesecake - GHS 120</option>
           <option value="Raspberry">Raspberry Cheesecake - GHS 120</option>
