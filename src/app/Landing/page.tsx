@@ -35,7 +35,6 @@ export default function LandingPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [cheesecake, setCheesecake] = useState("Blueberry");
-  const [deliveryStyle, setDeliveryStyle] = useState("Pickup");
   const [location, setLocation] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
@@ -56,8 +55,8 @@ export default function LandingPage() {
     const orderMessage = `
   Order Details:
   Cheesecake: ${cheesecake}
-  Delivery: ${deliveryStyle}
-  Location: ${deliveryStyle === "Delivery" ? location : "Pickup"}
+  Delivery: Delivery
+  Location: ${location}
   Quantity: ${quantity}
   Notes: ${notes}
     `;
@@ -455,18 +454,7 @@ export default function LandingPage() {
         </select>
       </label>
 
-      {/* Delivery style */}
-      <div className={styles.pickupOptions}>
-     
-
-        <button
-          type="button"
-          className={`${styles.option} ${deliveryStyle === "Delivery" ? styles.activeOption : ""}`}
-          onClick={() => setDeliveryStyle("Delivery")}
-        >
-          🚚 Delivery
-        </button>
-      </div>
+      
 
       {/* Location only if Delivery */}
    
