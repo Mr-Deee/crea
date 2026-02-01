@@ -14,6 +14,8 @@ export default function LandingPage() {
     "/images/cheese3.jpg",
   ];
 
+  const [menuOpen, setMenuOpen] = useState(false);
+
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [index, setIndex] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -39,6 +41,13 @@ export default function LandingPage() {
   const [notes, setNotes] = useState("");
 
 
+  const navLinks = [
+    { href: "Landing", label: "Home" },
+    { href: "#memories", label: "Memories" },
+    { href: "#order", label: "Order" },
+    { href: "#contact", label: "Contact" },
+
+  ];
 
 
 
@@ -260,48 +269,31 @@ export default function LandingPage() {
     <img src="/images/logo.png" alt="CheeseCakes Logo" />
   </div>
   <nav className={styles.navbar} aria-label="Main Navigation">
-  <ul className={styles.navlinks}>
-    <li>
-      <a href="#home">Home</a>
-    </li>
-    <li>
-      <a href="#memories">Memories</a>
-    </li>
-    <li>
-      <a href="#order">Order</a>
-    </li>
-    <li>
-      <a href="#contact">Contact</a>
-    </li>
-  </ul>
+      {/* Hamburger button - only visible on mobile */}
+      <button
+        className={styles.hamburger}
+        aria-label="Toggle menu"
+        aria-expanded={menuOpen}
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        <span />
+        <span />
+        <span />
+      </button>
 
-  <div
-    className={`${styles.hamburger} ${mobileMenuOpen ? styles.open : ""}`}
-    onClick={() => setMobileMenuOpen((prev) => !prev)}
-  >
-    <span />
-    <span />
-    <span />
-  </div>
-
-  {/* MOBILE MENU */}
-  <div className={`${styles.mobileMenu} ${mobileMenuOpen ? styles.show : ""}`}>
-    <ul>
-      <li>
-        <a href="#home" onClick={() => setMobileMenuOpen(false)}>Home</a>
-      </li>
-      <li>
-        <a href="#memories" onClick={() => setMobileMenuOpen(false)}>Memories</a>
-      </li>
-      <li>
-        <a href="#order" onClick={() => setMobileMenuOpen(false)}>Order</a>
-      </li>
-      <li>
-        <a href="#contact" onClick={() => setMobileMenuOpen(false)}>Contact</a>
-      </li>
-    </ul>
-  </div>
-</nav>
+      {/* Nav Links */}
+      <div className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`}>
+        {navLinks.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            onClick={() => setMenuOpen(false)} // close menu when link clicked
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    </nav>
 
 
       {/* Hero */}
