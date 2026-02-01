@@ -457,13 +457,7 @@ export default function LandingPage() {
 
       {/* Delivery style */}
       <div className={styles.pickupOptions}>
-        <button
-          type="button"
-          className={`${styles.option} ${deliveryStyle === "Pickup" ? styles.activeOption : ""}`}
-          onClick={() => setDeliveryStyle("Pickup")}
-        >
-          🏃‍♂️ Pickup
-        </button>
+     
 
         <button
           type="button"
@@ -475,7 +469,7 @@ export default function LandingPage() {
       </div>
 
       {/* Location only if Delivery */}
-      {deliveryStyle === "Delivery" && (
+   
         <label>
           Delivery Location
           <input
@@ -486,7 +480,7 @@ export default function LandingPage() {
             className={styles.textInput}
           />
         </label>
-      )}
+  
 
       {/* Quantity */}
       <label>
